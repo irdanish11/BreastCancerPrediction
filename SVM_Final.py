@@ -107,6 +107,7 @@ def bar_plot(acc, output_filename):
     ax.barh(labels, val)
     ax.set_xlabel('Accuracy of Class')
     ax.set_title('Class Wise Accuracy-SVM')
+    plt.xlim(0.0, 1.0)
     plt.savefig(output_filename, bbox_inches='tight', dpi=300)
     plt.show()
     plt.close()
