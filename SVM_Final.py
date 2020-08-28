@@ -98,6 +98,33 @@ def getcode(n) :
     for x , y in code.items() : 
         if n == y : 
             return x
+        
+def bar_plot(acc, output_filename):        
+    fig = plt.figure()
+    ax = fig.add_axes([0,0,1,1])
+    labels = list(acc.keys())
+    val = list(acc.values())
+    ax.barh(labels, val)
+    ax.set_xlabel('Accuracy of Class')
+    ax.set_title('Class Wise Accuracy-SVM')
+    plt.savefig(output_filename, bbox_inches='tight', dpi=300)
+    plt.show()
+    plt.close()
+    
+def class_wise_acc(cm, code, filename):
+    inv_code = {v: k for k, v in code.items()}
+    acc = {}
+    corr = 0
+    total = 0
+    for i in range(len(cm)):
+        sum_i = sum(cm[i])
+        true = cm[i][i]
+        corr += true
+        total += sum_i
+        acc[inv_code[i]] = true/sum_i
+    acc['AllData'] = corr/total
+    bar_plot(acc, filename)
+    return acc
 
 ###################### Loading Data ######################
 path = './Data/SVM'
@@ -182,7 +209,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=.3, random_s
 # define support vector classifier
 svm = SVC(kernel='linear', probability=True, random_state=42)
 # fit model
-svm.fit(X_train, Y_train)
+svm.fit(X_train, y_train)
 
 #Save SVM object
 pickle_dump(svm, path='./checkpoints/SVM_Model')
@@ -190,22 +217,22 @@ pickle_dump(svm, path='./checkpoints/SVM_Model')
 
 ################### Evaluate Model ###################   
 # generate predictions
-y_pred = svm.predict(X_test)
+y_pred = svm.predict(X_valid)
 
 # calculate accuracy
-accuracy = accuracy_score(Y_test, y_pred)
+accuracy = accuracy_score(Y_valid, y_pred)
 print('Model accuracy is: ', accuracy)     
 
 
 ###################  ROC curve & AUC ###################       
 # predict probabilities for X_test using predict_proba
-probabilities = svm.predict_proba(X_test)
+probabilities = svm.predict_proba(X_valid)
 
 # select the probabilities for label 1.0
 y_proba = probabilities[:, 1]
 
 # calculate false positive rate and true positive rate at different thresholds
-false_positive_rate, true_positive_rate, thresholds = roc_curve(Y_test, y_proba, pos_label=1)
+false_positive_rate, true_positive_rate, thresholds = roc_curve(Y_valid, y_proba, pos_label=1)
 
 # calculate AUC
 roc_auc = auc(false_positive_rate, true_positive_rate)
@@ -223,12 +250,16 @@ plt.xlabel('False Positive Rate');
 
 ################### Confusion Matrix ###################
 
-print('Shape of X_valid:'+str(np.shape(X_test)))
-print('Shape of Y_valid:'+str(np.shape(Y_test)))
+print('Shape of X_valid:'+str(np.shape(X_valid)))
+print('Shape of Y_valid:'+str(np.shape(Y_valid)))
 
 # generate predictions
-y_pred = svm.predict(X_test)
+y_pred = svm.predict(X_valid)
 
-cm = confusion_matrix(Y_test, y_pred)
+cm = confusion_matrix(Y_valid, y_pred)
 # create confusion matrix
-plot_confusion_matrix(cm, list(code.keys()), 'confusion_matrix_SVM.png')
+plot_confusion_matrix(cm, list(code.keys()), 'SVM_confusion_matrix.png')
+
+
+acc = class_wise_acc(cm, code, filename='SVM_Bar_Chart.png')
+    
